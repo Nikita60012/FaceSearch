@@ -1,8 +1,4 @@
-from PIL.JpegImagePlugin import JpegImageFile
 from sqlalchemy import MetaData, Integer, String, TIMESTAMP, Table, Column, LargeBinary
-from sqlalchemy.orm import Mapped, mapped_column
-
-from src.database import Base
 
 metadata = MetaData()
 
@@ -14,13 +10,4 @@ worker = Table(
     Column('birthdate', TIMESTAMP, nullable=True),
     Column('phone', String, nullable=True),
     Column('photo', LargeBinary, nullable=True)
-    # Column('photo', BLOB, nullable=True)
-    # Column('photo', image_attachment(), primary_key=True),
 )
-
-
-# class Worker(Base):
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-#     fullname: Mapped[str] = mapped_column(String, nullable=True)
-#     birthdate: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP, nullable=True)
-#     phone: Mapped[str] = mapped_column(String, nullable=True)

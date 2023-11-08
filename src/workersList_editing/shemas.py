@@ -1,9 +1,8 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class AddWorker(BaseModel):
-    # model_config = ConfigDict(arbitrary_types_allowed=True)
 
     id: int
     fullname: str

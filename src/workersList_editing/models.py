@@ -9,5 +9,6 @@ worker = Table(
     Column('fullname', String, nullable=True),
     Column('birthdate', TIMESTAMP, nullable=True),
     Column('phone', String, nullable=True),
-    Column('photo', LargeBinary, nullable=True)
+    Column('photo', LargeBinary, nullable=True),
+    Column('descriptor', String, nullable=True)
 )

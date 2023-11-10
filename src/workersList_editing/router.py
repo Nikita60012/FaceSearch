@@ -1,7 +1,5 @@
-import io
 from typing import Annotated
 
-from PIL import Image
 from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy import insert, update, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,8 +21,7 @@ async def add_worker(new_worker: Annotated[AddWorker, Depends()],
                      landmarks_data: Annotated[UploadFile, File],
                      data_model: Annotated[UploadFile, File],
                      session: Annotated[AsyncSession, Depends(get_async_session)]):
-    image = await file.read()
-    image = bytearray(image)
+    image = bytearray(file.file.read())
     img = reduce_image(image)
     result = make_descriptor(image, landmarks_data, data_model)
     statement = insert(worker).values(photo=img, descriptor=result[0], **new_worker.model_dump())

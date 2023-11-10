@@ -52,7 +52,7 @@ class FaceDetector:
             logging.exception("Что-то пошло не так. Возможно вы не правильно указали путь к папке с фотографиями.")
 
     # Нахождение дескриптора фотографии для идентификации
-    def find_main_descriptor(self, image):
+    def find_main_descriptor(self):
         img1 = io.imread('photo.jpg')
         dets_webcam = self.detector(img1, 1)
         for k, d in enumerate(dets_webcam):

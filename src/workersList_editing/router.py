@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy import insert, update, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_async_session
 from src.workersList_editing.models import worker
 from src.workersList_editing.shemas import AddWorker, UpdateWorker
-from src.workersList_editing.utils import reduce_image, bytes_to_image, make_descriptor
+from src.workersList_editing.utils import reduce_image, bytes_to_image, make_descriptor, image_to_bytes
 
 router = APIRouter(
     prefix='/edit_workers',
@@ -16,18 +16,19 @@ router = APIRouter(
 
 
 @router.post('/add', name='Добавление работника')
-async def add_worker(new_worker: Annotated[AddWorker, Depends()],
+async def add_worker(new_worker: Annotated[AddWorker, Form()],
                      file: Annotated[UploadFile, File],
                      landmarks_data: Annotated[UploadFile, File],
                      data_model: Annotated[UploadFile, File],
                      session: Annotated[AsyncSession, Depends(get_async_session)]):
     image = bytearray(file.file.read())
     img = reduce_image(image)
-    result = make_descriptor(image, landmarks_data, data_model)
-    statement = insert(worker).values(photo=img, descriptor=result[0], **new_worker.model_dump())
+    result = make_descriptor(img, landmarks_data, data_model)
+    img = image_to_bytes(img)
+    statement = insert(worker).values(photo=img, descriptor=str(result[0]), **new_worker.model_dump())
     await session.execute(statement)
     await session.commit()
-    return {'status': 'success'}
+    return {'status': str(result[0])}
 
 
 # @router.post('/reduce_image', name='Сжатие изображения')

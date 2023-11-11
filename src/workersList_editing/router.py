@@ -39,7 +39,7 @@ async def add_worker(new_worker: Annotated[AddWorker, Form()],
 #     return {'status': 'success'}
 
 
-@router.get('/get', name='Получение данных работника')
+@router.get('/get/{worker_id}', name='Получение данных работника')
 async def show_worker_photo(worker_id: int,
                             session: AsyncSession = Depends(get_async_session)):
     statement = select(worker).where(worker.c.id == worker_id)
@@ -75,12 +75,11 @@ async def show_worker_photo(worker_id: int,
 #     return {'status': 'success'}
 
 
-@router.put('/upd', name='Обновление данных работника')
-async def update_worker(upd_worker: UpdateWorker,
+@router.put('/upd/{worker_id}', name='Обновление данных работника')
+async def update_worker(worker_id: int, upd_worker: UpdateWorker,
                         session: AsyncSession = Depends(get_async_session)):
-    statement = update(worker).where(worker.c.id == upd_worker.id) \
+    statement = update(worker).where(worker.c.id == worker_id) \
         .values(**upd_worker.model_dump())
-    print(statement)
     await session.execute(statement)
     await session.commit()
     return {'status': 'success'}
@@ -102,10 +101,10 @@ async def update_worker(upd_worker: UpdateWorker,
 #     return str(result[0])
 
 
-@router.delete('/del', name='Удаление работника')
+@router.delete('/del/{del_id}', name='Удаление работника')
 async def delete_worker(
-        del_worker: str, session: AsyncSession = Depends(get_async_session)):
-    statement = delete(worker).where(worker.c.fullname == del_worker)
+        del_id: str, session: AsyncSession = Depends(get_async_session)):
+    statement = delete(worker).where(worker.c.fullname == del_id)
     await session.execute(statement)
     await session.commit()
     return {'status': 'success'}

@@ -1,6 +1,9 @@
 from typing import Annotated
 
+import numpy as np
+from PIL import Image
 from fastapi import APIRouter, Depends, UploadFile, File, Form
+import io
 from sqlalchemy import insert, update, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,10 +28,11 @@ async def add_worker(new_worker: Annotated[AddWorker, Form()],
     img = reduce_image(image)
     result = make_descriptor(img, landmarks_data, data_model)
     img = image_to_bytes(img)
-    statement = insert(worker).values(photo=img, descriptor=str(result[0]), **new_worker.model_dump())
+    descriptor = np.asarray(result[0])
+    statement = insert(worker).values(photo=img, descriptor=descriptor, **new_worker.model_dump())
     await session.execute(statement)
     await session.commit()
-    return {'status': str(result[0])}
+    return {'status': str(result)}
 
 
 # @router.post('/reduce_image', name='Сжатие изображения')
@@ -46,10 +50,10 @@ async def show_worker_photo(worker_id: int,
     result = await session.execute(statement)
     await session.commit()
     response = result.first()
-    # img = io.BytesIO(result.first()[4])
-    # img.seek(0)
-    # image = Image.open(img)
-    # image.show()
+    img = io.BytesIO(response[4])
+    img.seek(0)
+    image = Image.open(img)
+    image.show()
 
     return {'fullname': response[1],
             'birthdate': response[2],

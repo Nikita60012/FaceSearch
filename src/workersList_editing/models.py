@@ -1,4 +1,4 @@
-from sqlalchemy import MetaData, Integer, String, Table, Column, LargeBinary, Date
+from sqlalchemy import MetaData, Integer, String, Table, Column, LargeBinary, Date, ARRAY, Float
 
 metadata = MetaData()
 
@@ -10,5 +10,5 @@ worker = Table(
     Column('birthdate', Date, nullable=True),
     Column('phone', String, nullable=True),
     Column('photo', LargeBinary, nullable=True),
-    Column('descriptor', String, nullable=True)
+    Column('descriptor', ARRAY(Float), nullable=True)
 )

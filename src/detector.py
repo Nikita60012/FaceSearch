@@ -3,6 +3,7 @@ import cv2
 import dlib
 import argparse
 
+import numpy as np
 from fastapi import UploadFile
 from skimage import io
 import matplotlib.pyplot as plt
@@ -55,44 +56,45 @@ class FaceDetector:
     def find_main_descriptor(self):
         img1 = io.imread('photo.jpg')
         dets_webcam = self.detector(img1, 1)
+        logging.info(dets_webcam)
         for k, d in enumerate(dets_webcam):
             shape = self.sp(img1, d)
+            logging.info(shape)
         descriptor = self.facerec.compute_face_descriptor(img1, shape)
         return descriptor, img1
 
     # Поиск минимальнейшего расстояния между дескрипторами
-    def comparison(self, path: str, descriptors, descriptor):
+    def comparison(self, descriptors, descriptor):
         distances = []
-        result: str
-        for i in descriptors: distances.append(distance.euclidean(descriptor, i))
+        result: str = 'empty'
+        array = []
+        for k in descriptors:
+            array.append(k[0])
+        for i in array:
+            distances.append(distance.euclidean(descriptor, i))
+            logging.info('distances: ' + str(distances))
         min_dist = min(distances)
-        image2 = io.imread(f'{path}' + '/' + self.faces[distances.index(min_dist)])
+        min_index: int
+        for k in range(0, len(distances)):
+            if distances[k] == min_dist:
+                min_index = k
+        res = np.where(distances == min_dist)[0]
         if min_dist > 0.6 and len(descriptors) == 1:
             logging.info('На фотографиях разные люди!')
             result = 'На фотографиях разные люди!'
+        elif min_dist < 0.6 and len(descriptors) == 1:
+            logging.info('На фотографях один и тот же человек')
+            result = 'На фотографях один и тот же человек'
         elif min_dist <= 0.6 and len(descriptors) > 1:
-            logging.info('Полученное лицо совпадает с лицом на фото ' + self.faces[distances.index(min_dist)])
-            result = 'Полученное лицо совпадает с лицом на фото'
+            logging.info(f'Полученное лицо совпадает с лицом на фото записи с индексом {min_index}')
+            result = f'Полученное лицо совпадает с лицом на фото записи с индексом {min_index}'
         elif min_dist > 0.6 and len(descriptors) > 1:
-            logging.info('Точно сказать не могу, но наверное это человек с фотографии '
-                         + self.faces[distances.index(min_dist)])
-            result = 'Точно сказать не могу, но наверное это человек с фотографии'
+            logging.info('Это незнакомый человек')
+            result = 'Это незнакомый человек'
+        logging.info(f'min_dist: {min_dist}')
+        logging.info(f'min_dist: {len(descriptors)}')
         logging.info('Эвклидово расстояние между дескрипторами: ' + str(min_dist) + '\n')
-        return image2, result
-
-    # Отрисовка результата
-    def draw_result(self, detect, image, image2, result):
-        ltrb = [detect[0].tl_corner(), detect[0].br_corner()]
-        plt.figure(figsize=(10, 6))
-        cv2.rectangle(image, (ltrb[0].x, ltrb[0].y, ltrb[1].x, ltrb[1].y), (255, 0, 0), 5)
-        plt.subplot(1, 2, 1)
-        plt.title('Полученное лицо:')
-        plt.xlabel(result)
-        plt.imshow(image)
-        plt.subplot(1, 2, 2)
-        plt.title('Предполагаемое лицо:')
-        plt.imshow(image2)
-        plt.show()
+        return result
 
 # face_detect = FaceDetector()
 # face_descriptors, faces = face_detect.find_face_descriptors(args.learn_dir)

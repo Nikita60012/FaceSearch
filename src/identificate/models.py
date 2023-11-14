@@ -9,5 +9,6 @@ worker_identifications = Table(
     Column('name', String, nullable=True),
     Column('date', TIMESTAMP, nullable=True),
     Column('worker_photo', LargeBinary, nullable=True),
-    Column('person_to_detect', LargeBinary, nullable=True)
+    Column('person_to_detect', LargeBinary, nullable=True),
+    Column('conclusion', String, nullable=True)
 )

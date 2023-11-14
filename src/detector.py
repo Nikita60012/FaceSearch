@@ -56,45 +56,44 @@ class FaceDetector:
     def find_main_descriptor(self):
         img1 = io.imread('photo.jpg')
         dets_webcam = self.detector(img1, 1)
-        logging.info(dets_webcam)
         for k, d in enumerate(dets_webcam):
             shape = self.sp(img1, d)
-            logging.info(shape)
         descriptor = self.facerec.compute_face_descriptor(img1, shape)
         return descriptor, img1
 
     # Поиск минимальнейшего расстояния между дескрипторами
     def comparison(self, descriptors, descriptor):
         distances = []
+        unknown: bool = True
         result: str = 'empty'
         array = []
         for k in descriptors:
-            array.append(k[0])
+            array.append(k[2])
         for i in array:
             distances.append(distance.euclidean(descriptor, i))
-            logging.info('distances: ' + str(distances))
         min_dist = min(distances)
         min_index: int
         for k in range(0, len(distances)):
             if distances[k] == min_dist:
                 min_index = k
-        res = np.where(distances == min_dist)[0]
         if min_dist > 0.6 and len(descriptors) == 1:
             logging.info('На фотографиях разные люди!')
             result = 'На фотографиях разные люди!'
+            unknown = False
         elif min_dist < 0.6 and len(descriptors) == 1:
             logging.info('На фотографях один и тот же человек')
             result = 'На фотографях один и тот же человек'
+            unknown = False
         elif min_dist <= 0.6 and len(descriptors) > 1:
             logging.info(f'Полученное лицо совпадает с лицом на фото записи с индексом {min_index}')
             result = f'Полученное лицо совпадает с лицом на фото записи с индексом {min_index}'
+            unknown = False
         elif min_dist > 0.6 and len(descriptors) > 1:
             logging.info('Это незнакомый человек')
             result = 'Это незнакомый человек'
-        logging.info(f'min_dist: {min_dist}')
         logging.info(f'min_dist: {len(descriptors)}')
         logging.info('Эвклидово расстояние между дескрипторами: ' + str(min_dist) + '\n')
-        return result
+        return result, min_index, unknown
 
 # face_detect = FaceDetector()
 # face_descriptors, faces = face_detect.find_face_descriptors(args.learn_dir)

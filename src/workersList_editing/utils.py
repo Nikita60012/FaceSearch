@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 
 from PIL import Image
@@ -17,7 +18,9 @@ def reduce_image(file: bytearray):
 
 def bytes_to_image(byte_code):
     image = io.BytesIO(byte_code)
+    logging.info(f'first {image}')
     image.seek(0)
+    logging.info(f'second {image}')
     image = Image.open(image)
     return image
 

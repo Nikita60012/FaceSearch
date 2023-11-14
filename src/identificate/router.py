@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 
-@router.post('/identify', name='Идентифицирование (в работе)')
+@router.post('/identify', name='Идентифицирование')
 async def identify(file: Annotated[UploadFile, File()],
                    landmarks_data: Annotated[UploadFile, File],
                    data_model: Annotated[UploadFile, File],
@@ -53,7 +53,7 @@ async def identify(file: Annotated[UploadFile, File()],
     return result[0]
 
 
-@router.get('/get_identification/{identification_id}')
+@router.get('/get_identification/{identification_id}', name='получение записи идентификации')
 async def get_identification(identification_id: int,
                              session: Annotated[AsyncSession, Depends(get_async_session)]):
     statement = select(worker_identifications).where(worker_identifications.c.id == identification_id)
@@ -69,7 +69,7 @@ async def get_identification(identification_id: int,
             'conclusion': response[5]}
 
 
-@router.delete('/delete_identification/{identification_id}')
+@router.delete('/delete_identification/{identification_id}', name='удаление записи идентификации')
 async def delete_identification(identification_id: int,
                                 session: Annotated[AsyncSession, Depends(get_async_session)]):
     statement = delete(worker_identifications).where(worker.c.id == identification_id)

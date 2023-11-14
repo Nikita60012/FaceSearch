@@ -6,7 +6,6 @@ import os
 import zlib
 
 from PIL import Image
-from matplotlib.pyplot import box
 from src.detector import FaceDetector
 
 dlib_download_model = 'dlib_model.dat'

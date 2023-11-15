@@ -29,7 +29,7 @@ async def add_worker(new_worker: Annotated[AddWorker, Form()],
     statement = insert(worker).values(photo=img, descriptor=descriptor, **new_worker.model_dump())
     await session.execute(statement)
     await session.commit()
-    logging.info(f'Работник {new_worker.fullname} успешно добавлен')
+    logging.info(f'Worker {new_worker.fullname} successfully added')
     return {'status': 'success'}
 
 
@@ -43,7 +43,7 @@ async def get_worker(worker_id: int,
     decomp_image = decompress_image(response[4])
     image = bytes_to_image(decomp_image)
     image.show()
-    logging.info(f'Данные работника {response[1]} получены')
+    logging.info(f'Worker data {response[1]} received')
     return {'fullname': response[1],
             'birthdate': response[2],
             'phone': response[3],
@@ -65,7 +65,7 @@ async def update_worker(worker_id: int, upd_worker: UpdateWorker,
         .values(photo=img, descriptor=descriptor, **upd_worker.model_dump())
     await session.execute(statement)
     await session.commit()
-    logging.info(f'Данные работника с индексом {worker_id} обновлены')
+    logging.info(f'Worker data with id {worker_id} updated')
     return {'status': 'success'}
 
 
@@ -75,5 +75,5 @@ async def delete_worker(worker_id: str,
     statement = delete(worker).where(worker.c.id == worker_id)
     await session.execute(statement)
     await session.commit()
-    logging.info(f'Работник с индексом {worker_id} удалён')
+    logging.info(f'Worker with id {worker_id} deleted')
     return {'status': 'success'}

@@ -36,14 +36,14 @@ async def identify(file: Annotated[UploadFile, File()],
                                                       worker_photo=worker_person[result[1]][2],
                                                       person_to_detect=person_photo,
                                                       conclusion=result[0])
-        logging.info(f'Работник {worker_person[result[1]][1]} идентифицирован')
+        logging.info(f'Worker {worker_person[result[1]][1]} identificated')
     else:
         statement = insert(worker_identifications).values(name='Uknown',
                                                           date=datetime.datetime.today(),
                                                           worker_photo=None,
                                                           person_to_detect=person_photo,
                                                           conclusion=result[0])
-        logging.info(f'Человек не идентифицирован')
+        logging.info(f'Person not identificated')
     await session.execute(statement)
     await session.commit()
     return result[0]
@@ -62,7 +62,7 @@ async def get_identification(identification_id: int,
     decomp_image = decompress_image(response[4])
     person_image = bytes_to_image(decomp_image)
     person_image.show()
-    logging.info(f'Запись идентификации с индексом {identification_id} получена')
+    logging.info(f'Data of identification with id {identification_id} received')
     return {'name': response[1],
             'date': response[2],
             'conclusion': response[5]}
@@ -74,5 +74,5 @@ async def delete_identification(identification_id: int,
     statement = delete(worker_identifications).where(worker_identifications.c.id == identification_id)
     await session.execute(statement)
     await session.commit()
-    logging.info(f'Запись идентификации с индексом {identification_id} удалена')
+    logging.info(f'ЗData of identification with id {identification_id} deleted')
     return {'status': 'success'}

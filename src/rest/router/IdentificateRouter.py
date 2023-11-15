@@ -6,29 +6,31 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy import select, insert, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database import get_async_session
-from src.identificate.models import worker_identifications
-from src.utils import comparison, decompress_image
-from src.workersList_editing.models import worker
-from src.utils import make_descriptor, bytes_to_image, compress_image
+from src.database.connection.database import get_async_session
+from src.dao.IdentificateDAO import worker_identifications
+from src.service.Image.ImageService import decompress_image
+from src.dao.WorkersListModels import worker
+from src.service.Image.ImageService import bytes_to_image, compress_image
+from src.service.detector.DetectorService import FaceDetector
 
 router = APIRouter(
     prefix='/identify_workers',
     tags=['Идентификация']
 )
 
+detect = FaceDetector()
 
 @router.post('/identify', name='Идентифицирование')
 async def identify(file: Annotated[UploadFile, File()],
                    session: Annotated[AsyncSession, Depends(get_async_session)]):
     byte_image = file.file.read()
     person_image = bytes_to_image(byte_image)
-    person_descriptor = make_descriptor(person_image)
+    person_descriptor = detect.find_main_descriptor(person_image)
     statement = select(worker.c.id, worker.c.fullname, worker.c.photo, worker.c.descriptor)
     descriptor = await session.execute(statement)
     await session.commit()
     worker_person = descriptor.fetchall()
-    result = comparison(worker_person, person_descriptor)
+    result = detect.comparison(worker_person, person_descriptor)
     person_photo = compress_image(byte_image)
     if not result[2]:
         statement = insert(worker_identifications).values(name=worker_person[result[1]][1],

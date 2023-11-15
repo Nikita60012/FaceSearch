@@ -1,7 +1,14 @@
+import os
+
 import dlib
-from numpy import ndarray
+import numpy
+import wget
+from PIL import Image
 from scipy.spatial import distance
 import logging
+
+dlib_download_model = 'resource\\dlib_model.dat'
+dlib_download_landmark = 'resource\\dlib_landmark.dat'
 
 
 class FaceDetector:
@@ -9,8 +16,9 @@ class FaceDetector:
     # Подгрузка весов и инициализация детектора лица
     def __init__(self):
         self.detector = dlib.get_frontal_face_detector()
-        self.sp = dlib.shape_predictor('dlib_landmark.dat')
-        self.facerec = dlib.face_recognition_model_v1('dlib_model.dat')
+        self.check_data()
+        self.sp = dlib.shape_predictor(dlib_download_landmark)
+        self.facerec = dlib.face_recognition_model_v1(dlib_download_model)
 
     # Нахождение дескриптора каждой из фотографии, представленной в базе данных
     # def find_face_descriptors(self, path: str):
@@ -33,8 +41,9 @@ class FaceDetector:
     #         logging.exception("Что-то пошло не так. Возможно вы не правильно указали путь к папке с фотографиями.")
 
     # Нахождение дескриптора фотографии
-    def find_main_descriptor(self, image: ndarray):
-        img = image.astype('uint8')
+    def find_main_descriptor(self, image: Image):
+        nparray = numpy.asarray(image)
+        img = nparray.astype('uint8')
         dets_webcam = self.detector(img, 1)
         for k, d in enumerate(dets_webcam):
             shape = self.sp(img, d)
@@ -76,3 +85,10 @@ class FaceDetector:
         logging.info(f'min_dist: {len(descriptors)}')
         logging.info('Эвклидово расстояние между дескрипторами: ' + str(min_dist) + '\n')
         return result, min_index, unknown
+
+    def check_data(self):
+        if not (os.path.isfile(dlib_download_model) and os.path.isfile(dlib_download_landmark)):
+            model_url = 'https://drive.google.com/u/0/uc?id=1IgUL8X7jb0bDXow0JZZJwHNB-f-Jo00x&export=download'
+            landmark_url = 'https://drive.google.com/u/0/uc?id=1fCHIUgpwmcK5iHMtD6r6a6D0NUSKNcvf&export=download'
+            wget.download(model_url, '.\\resource\\')
+            wget.download(landmark_url, '.\\resource\\')

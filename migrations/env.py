@@ -4,12 +4,12 @@ from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-from src.identificate.models import metadata as identificate_metadata
-from src.workersList_editing.models import metadata as worker_metadata
+from src.dao.IdentificateDAO import metadata as identificate_metadata
+from src.dao.WorkersListModels import metadata as worker_metadata
 
 from alembic import context
 
-from src.config import DB_HOST, DB_PORT, DB_USER, DB_NAME, DB_PASS
+from src.database.connection.db_config import DB_HOST, DB_PORT, DB_USER, DB_NAME, DB_PASS
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

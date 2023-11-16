@@ -7,8 +7,8 @@ from PIL import Image
 from scipy.spatial import distance
 import logging
 
-dlib_download_model = 'resource\\dlib_model.dat'
-dlib_download_landmark = 'resource\\dlib_landmark.dat'
+dlib_download_model = 'src\\resource\\dlib_model.dat'
+dlib_download_landmark = 'src\\resource\\dlib_landmark.dat'
 
 
 class FaceDetector:
@@ -90,5 +90,5 @@ class FaceDetector:
         if not (os.path.isfile(dlib_download_model) and os.path.isfile(dlib_download_landmark)):
             model_url = 'https://drive.google.com/u/0/uc?id=1IgUL8X7jb0bDXow0JZZJwHNB-f-Jo00x&export=download'
             landmark_url = 'https://drive.google.com/u/0/uc?id=1fCHIUgpwmcK5iHMtD6r6a6D0NUSKNcvf&export=download'
-            wget.download(model_url, '.\\resource\\')
-            wget.download(landmark_url, '.\\resource\\')
+            wget.download(model_url, 'src\\resource\\')
+            wget.download(landmark_url, 'src\\resource\\')

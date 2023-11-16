@@ -5,7 +5,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from src.dao.IdentificateDAO import metadata as identificate_metadata
-from src.dao.WorkersListModels import metadata as worker_metadata
+from src.dao.WorkersListModelsDAO import metadata as worker_metadata
 
 from alembic import context
 

@@ -7,7 +7,7 @@ from sqlalchemy import insert, update, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connection.database import get_async_session
-from src.dao.WorkersListModels import worker
+from src.dao.WorkersListModelsDAO import worker
 from src.dto.request.AddWorkerDTO import AddWorker
 from src.dto.request.UpdateWorkerDTO import UpdateWorker
 from src.service.Image.ImageService import compress_image, bytes_to_image, decompress_image

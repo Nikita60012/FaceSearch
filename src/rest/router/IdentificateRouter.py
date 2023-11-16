@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.connection.database import get_async_session
 from src.dao.IdentificateDAO import worker_identifications
 from src.service.Image.ImageService import decompress_image
-from src.dao.WorkersListModels import worker
+from src.dao.WorkersListModelsDAO import worker
 from src.service.Image.ImageService import bytes_to_image, compress_image
 from src.service.detector.DetectorService import FaceDetector
 

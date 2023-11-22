@@ -56,6 +56,6 @@ python-multipart~=0.0.6
 uritemplate~=4.1.1
 wget~=3.2
 websocket-client~=1.6.4
-zlib
-
-
+docker~=6.1.3
+gunicorn~=21.2.0
+cmake

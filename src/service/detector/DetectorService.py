@@ -1,13 +1,13 @@
 import os
 
 import dlib
+import gdown
 import numpy
-import wget
 from PIL import Image
 from scipy.spatial import distance
 import logging
 
-dlib_data_path = 'src\\resource\\'
+dlib_data_path = 'src\\'
 dlib_download_model = f'{dlib_data_path}dlib_model.dat'
 dlib_download_landmark = f'{dlib_data_path}dlib_landmark.dat'
 
@@ -43,6 +43,7 @@ class FaceDetector:
 
     # Нахождение дескриптора фотографии
     def find_main_descriptor(self, image: Image):
+        shape = "0"
         nparray = numpy.asarray(image)
         img = nparray.astype('uint8')
         dets_webcam = self.detector(img, 1)
@@ -88,9 +89,8 @@ class FaceDetector:
         return result, min_index, unknown
 
     def check_data(self):
+        # if not os.path.exists(dlib_data_path):
+        #     os.mkdir(dlib_data_path)
         if not (os.path.isfile(dlib_download_model) and os.path.isfile(dlib_download_landmark)):
-            model_url = 'https://drive.google.com/u/0/uc?id=1IgUL8X7jb0bDXow0JZZJwHNB-f-Jo00x&export=download'
-            landmark_url = 'https://drive.google.com/u/0/uc?id=1fCHIUgpwmcK5iHMtD6r6a6D0NUSKNcvf&export=download'
-            os.mkdir(dlib_data_path)
-            wget.download(model_url, dlib_data_path)
-            wget.download(landmark_url, dlib_data_path)
+            gdown.download(id="1IgUL8X7jb0bDXow0JZZJwHNB-f-Jo00x", output=dlib_download_model)
+            gdown.download(id="1fCHIUgpwmcK5iHMtD6r6a6D0NUSKNcvf", output=dlib_download_landmark)

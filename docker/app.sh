@@ -2,6 +2,4 @@
 
 cd src/service/detector
 
-python DataDownload.py
-
 cd ../../..

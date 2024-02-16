@@ -18,7 +18,7 @@ app = FastAPI(
 if __name__ == '__main__':
     freeze_support()
     migration_check()
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, workers=4)
 
 app.include_router(router_worker)
 app.include_router(router_identify)

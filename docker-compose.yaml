@@ -11,7 +11,6 @@ services:
     env_file:
       - .env-non-dev
     container_name: identification_app
-    command: ['/identification_app/docker/app.sh']
     ports:
       - "2785:8000"
     depends_on:

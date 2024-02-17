@@ -7,7 +7,7 @@ from PIL import Image
 from scipy.spatial import distance
 import logging
 
-dlib_data_path = 'src\\'
+dlib_data_path = 'src\\source\\'
 dlib_download_model = f'{dlib_data_path}dlib_model.dat'
 dlib_download_landmark = f'{dlib_data_path}dlib_landmark.dat'
 
@@ -89,8 +89,8 @@ class FaceDetector:
         return result, min_index, unknown
 
     def check_data(self):
-        # if not os.path.exists(dlib_data_path):
-        #     os.mkdir(dlib_data_path)
+        if not os.path.exists(dlib_data_path):
+            os.mkdir(dlib_data_path)
         if not (os.path.isfile(dlib_download_model) and os.path.isfile(dlib_download_landmark)):
             gdown.download(id="1IgUL8X7jb0bDXow0JZZJwHNB-f-Jo00x", output=dlib_download_model)
             gdown.download(id="1fCHIUgpwmcK5iHMtD6r6a6D0NUSKNcvf", output=dlib_download_landmark)

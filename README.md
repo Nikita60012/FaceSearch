@@ -1,3 +1,5 @@
-Весы: https://drive.google.com/drive/folders/1AVkXyoMFmktgG62Ao2plOHdhb_nXYgLl?usp=sharing
+Инструкция по установке Dlib: https://www.geeksforgeeks.org/how-to-install-dlib-library-for-python-in-windows-10/
 
-Dlib для установки требует наличие компилятора версии VS code C++
+Запуск:
+1. Перейти в папку с кодом
+2. Выполнить python main.py

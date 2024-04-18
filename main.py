@@ -6,7 +6,8 @@ from fastapi import FastAPI
 from src.database.connection.database import migration_check
 from src.rest.router.WorkersListRouter import router as router_worker
 from src.rest.router.IdentificateRouter import router as router_identify
-
+from src.rest.router.ClientRouter import router as router_client
+from src.rest.router.SubscribesRouter import router as router_subscribe
 
 logging.basicConfig(level=logging.INFO, filename='face_identificate_log.log', filemode='a',
                     format="%(asctime)s %(levelname)s %(message)s")
@@ -22,3 +23,5 @@ if __name__ == '__main__':
 
 app.include_router(router_worker)
 app.include_router(router_identify)
+app.include_router(router_client)
+app.include_router(router_subscribe)

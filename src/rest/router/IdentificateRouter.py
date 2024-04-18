@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.connection.database import get_async_session
 from src.dao.IdentificateDAO import worker_identifications
 from src.service.Image.ImageService import decompress_image
-from src.dao.WorkersListModelsDAO import worker
+from src.dao.WorkerDAO import worker
 from src.service.Image.ImageService import bytes_to_image, compress_image
 from src.service.detector.DetectorService import FaceDetector
 
@@ -20,8 +20,9 @@ router = APIRouter(
 
 detect = FaceDetector()
 
+
 @router.post('/identify', name='Идентифицирование')
-async def identify(file: Annotated[UploadFile, File()],
+async def identify(client_id: int, file: Annotated[UploadFile, File()],
                    session: Annotated[AsyncSession, Depends(get_async_session)]):
     byte_image = file.file.read()
     person_image = bytes_to_image(byte_image)
@@ -33,14 +34,16 @@ async def identify(file: Annotated[UploadFile, File()],
     result = detect.comparison(worker_person, person_descriptor)
     person_photo = compress_image(byte_image)
     if not result[2]:
-        statement = insert(worker_identifications).values(name=worker_person[result[1]][1],
-                                                      date=datetime.datetime.today(),
-                                                      worker_photo=worker_person[result[1]][2],
-                                                      person_to_detect=person_photo,
-                                                      conclusion=result[0])
+        statement = insert(worker_identifications).values(id_client=client_id,
+                                                          name=worker_person[result[1]][1],
+                                                          date=datetime.datetime.today(),
+                                                          worker_photo=worker_person[result[1]][2],
+                                                          person_to_detect=person_photo,
+                                                          conclusion=result[0])
         logging.info(f'Worker {worker_person[result[1]][1]} identificated')
     else:
-        statement = insert(worker_identifications).values(name='Uknown',
+        statement = insert(worker_identifications).values(id_client=client_id,
+                                                          name='Uknown',
                                                           date=datetime.datetime.today(),
                                                           worker_photo=None,
                                                           person_to_detect=person_photo,
@@ -52,28 +55,30 @@ async def identify(file: Annotated[UploadFile, File()],
 
 
 @router.get('/get_identification/{identification_id}', name='получение записи идентификации')
-async def get_identification(identification_id: int,
+async def get_identification(client_id: int, identification_id: int,
                              session: Annotated[AsyncSession, Depends(get_async_session)]):
-    statement = select(worker_identifications).where(worker_identifications.c.id == identification_id)
+    statement = select(worker_identifications).where(worker_identifications.c.id == identification_id
+                                                     and worker_identifications.c.id_client == client_id)
     result = await session.execute(statement)
     await session.commit()
     response = result.first()
-    decomp_image = decompress_image(response[3])
+    decomp_image = decompress_image(response[4])
     worker_image = bytes_to_image(decomp_image)
     worker_image.show()
-    decomp_image = decompress_image(response[4])
+    decomp_image = decompress_image(response[5])
     person_image = bytes_to_image(decomp_image)
     person_image.show()
     logging.info(f'Data of identification with id {identification_id} received')
-    return {'name': response[1],
-            'date': response[2],
-            'conclusion': response[5]}
+    return {'name': response[2],
+            'date': response[3],
+            'conclusion': response[6]}
 
 
 @router.delete('/delete_identification/{identification_id}', name='удаление записи идентификации')
-async def delete_identification(identification_id: int,
+async def delete_identification(client_id: int, identification_id: int,
                                 session: Annotated[AsyncSession, Depends(get_async_session)]):
-    statement = delete(worker_identifications).where(worker_identifications.c.id == identification_id)
+    statement = delete(worker_identifications).where(worker_identifications.c.id == identification_id and
+                                                     worker_identifications.c.id_client == client_id)
     await session.execute(statement)
     await session.commit()
     logging.info(f'ЗData of identification with id {identification_id} deleted')

@@ -7,7 +7,7 @@ from sqlalchemy import insert, update, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connection.database import get_async_session
-from src.dao.WorkersListModelsDAO import worker
+from src.dao.WorkerDAO import worker
 from src.dto.request.AddWorkerDTO import AddWorker
 from src.dto.request.UpdateWorkerDTO import UpdateWorker
 from src.service.Image.ImageService import compress_image, bytes_to_image, decompress_image
@@ -38,21 +38,21 @@ async def add_worker(new_worker: Annotated[AddWorker, Form()],
 
 
 @router.get('/get/{worker_id}', name='Получение данных работника')
-async def get_worker(worker_id: int,
+async def get_worker(client_id: int, worker_id: int,
                      session: AsyncSession = Depends(get_async_session)):
-    statement = select(worker).where(worker.c.id == worker_id)
+    statement = select(worker).where(worker.c.id == worker_id and worker.c.id_client == client_id)
     result = await session.execute(statement)
     await session.commit()
     response = result.first()
-    decomp_image = decompress_image(response[4])
-    image = bytes_to_image(decomp_image)
-    image.show()
+    # decomp_image = decompress_image(response[4])
+    # image = bytes_to_image(decomp_image)
+    # image.show()
     logging.info(f'Worker data {response[1]} received')
     return {'fullname': response[1],
             'birthdate': response[2],
             'phone': response[3],
             # 'photo': str(response[4]),
-            'descriptor': response[5]
+            # 'descriptor': response[5]
             }
 
 
@@ -74,9 +74,9 @@ async def update_worker(worker_id: int, upd_worker: UpdateWorker,
 
 
 @router.delete('/del/{del_id}', name='Удаление работника')
-async def delete_worker(worker_id: int,
+async def delete_worker(client_id: int, worker_id: int,
                         session: AsyncSession = Depends(get_async_session)):
-    statement = delete(worker).where(worker.c.id == worker_id)
+    statement = delete(worker).where(worker.c.id == worker_id and worker.c.id_client == client_id)
     await session.execute(statement)
     await session.commit()
     logging.info(f'Worker with id {worker_id} deleted')

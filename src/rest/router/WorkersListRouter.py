@@ -6,10 +6,12 @@ from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy import insert, update, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.dao.ClientDAO import client
 from src.database.connection.database import get_async_session
 from src.dao.WorkerDAO import worker
 from src.dto.request.AddWorkerDTO import AddWorker
 from src.dto.request.UpdateWorkerDTO import UpdateWorker
+from src.dto.response.getPeopleDTO import GetPeople
 from src.service.Image.ImageService import compress_image, bytes_to_image, decompress_image
 from src.service.detector.DetectorService import FaceDetector
 
@@ -37,7 +39,7 @@ async def add_worker(new_worker: Annotated[AddWorker, Form()],
     return {'status': 'success'}
 
 
-@router.get('/get/{worker_id}', name='Получение данных работника')
+@router.get('/get/{client_id}/{worker_id}', name='Получение данных работника')
 async def get_worker(client_id: int, worker_id: int,
                      session: AsyncSession = Depends(get_async_session)):
     statement = select(worker).where(worker.c.id == worker_id and worker.c.id_client == client_id)
@@ -54,6 +56,31 @@ async def get_worker(client_id: int, worker_id: int,
             # 'photo': str(response[4]),
             # 'descriptor': response[5]
             }
+
+
+@router.get('/get_all/{client_email}', name='Получение данных работников')
+async def get_workers(client_email: str,
+                      session: AsyncSession = Depends(get_async_session)):
+    statement = select(client).where(client.c.email == client_email)
+    result = await session.execute(statement)
+    await session.commit()
+    response = result.first()
+    client_id = response[0]
+    print(client_email)
+    print(client_id)
+    statement = select(worker.c["id", "fullname"]).where(worker.c.id_client == client_id)
+    result = await session.execute(statement)
+    await session.commit()
+    response = result.all()
+    # decomp_image = decompress_image(response[4])
+    # image = bytes_to_image(decomp_image)
+    # image.show()
+    print(response[0])
+    peopleList = []
+    for people in response:
+        peopleList.append(GetPeople(id=people[0], fullname=people[1]))
+    logging.info(f'Workers data {client_id} received')
+    return peopleList
 
 
 @router.put('/upd/{worker_id}', name='Обновление данных работника')

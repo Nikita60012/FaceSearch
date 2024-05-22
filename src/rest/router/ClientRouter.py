@@ -1,19 +1,16 @@
 import logging
 from typing import Annotated
 
-from fastapi import Form, Depends, APIRouter
+from fastapi import Depends, APIRouter
 from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.dao.ClientDAO import client
 from src.database.connection.database import get_async_session
-from src.dao.IdentificateDAO import worker_identifications
 from src.dto.request.AddClientDTO import AddClient
 from src.dto.request.AuthClientDTO import AuthClient
 from src.dto.request.UpdateClientDTO import UpdateClient
 from src.dto.response.getClientDTO import GetClient
-from src.service.Image.ImageService import decompress_image
-from src.dao.ClientDAO import client
-from src.service.Image.ImageService import bytes_to_image
 
 router = APIRouter(
     prefix='/client',

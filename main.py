@@ -4,10 +4,10 @@ from multiprocessing import freeze_support
 import uvicorn
 from fastapi import FastAPI
 from src.database.connection.database import migration_check
-from src.rest.router.PeopleListRouter import router as router_worker
-from src.rest.router.IdentificateRouter import router as router_identify
+from src.rest.router.HumanListRouter import router as router_worker
+from src.rest.router.IdentificationRouter import router as router_identify
 from src.rest.router.ClientRouter import router as router_client
-from src.rest.router.SubscribesRouter import router as router_subscribe
+from src.rest.router.SubscribeRouter import router as router_subscribe
 
 
 logging.basicConfig(level=logging.INFO, filename='face_identificate_log.log', filemode='a',

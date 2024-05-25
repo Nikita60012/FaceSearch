@@ -3,8 +3,8 @@ from src.dao.ClientDAO import client
 
 metadata = MetaData()
 
-worker_identifications = Table(
-    'worker_identifications',
+human_identifications = Table(
+    'human_identifications',
     metadata,
     Column('id', Integer, primary_key=True),
     Column('id_client', Integer, ForeignKey(client.c.id, ondelete='CASCADE', onupdate='CASCADE'), nullable=False),

@@ -2,15 +2,15 @@ import logging
 from typing import Annotated
 
 from fastapi import Depends, APIRouter
-from sqlalchemy import select, insert, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.dao.ClientDAO import client
 from src.database.connection.database import get_async_session
 from src.dto.request.AddClientDTO import AddClient
 from src.dto.request.AuthClientDTO import AuthClient
 from src.dto.request.UpdateClientDTO import UpdateClient
-from src.dto.response.getClientDTO import GetClient
+from src.dto.response.GetTokenClientDTO import GetTokenClientDTO
+from src.service.client.ClientService import create_session_service, is_client_exist_service, add_client_service, \
+    client_auth_service, update_client_service, client_delete_service, get_client_service
 
 router = APIRouter(
     prefix='/client',
@@ -18,95 +18,59 @@ router = APIRouter(
 )
 
 
-@router.post('/registration', name='Регистрация')
+@router.post('/registration/', name='Регистрация')
 async def registration(new_client: AddClient,
                        session: Annotated[AsyncSession, Depends(get_async_session)]):
-    email = new_client.email
-    statement = select(client).where(client.c.email == email)
-    result = await session.execute(statement)
-    await session.commit()
-    response = result.first()
-    if response is None:
-        statement = insert(client).values(**new_client.model_dump())
-        await session.execute(statement)
-        await session.commit()
+    result = await is_client_exist_service(new_client.email, session)
+    if result is None:
+        await add_client_service(new_client, session)
         logging.info(f'Client {new_client.email} successfully added')
-        return True
+        token = await create_session_service(new_client.email, new_client.password, new_client.ip, session)
+        return GetTokenClientDTO(enter=True, token=token)
     else:
-        return False
+        return GetTokenClientDTO(enter=False, token="")
 
 
-@router.get('/client_get/{client_email}', name='Получение данных клиента')
-async def get_client_email(client_email: str,
-                           session: AsyncSession = Depends(get_async_session)):
-    statement = select(client).where(client.c.email == client_email)
-    result = await session.execute(statement)
-    await session.commit()
-    response = result.first()
-    logging.info(f'Client data {response[1]} received')
-    get_client = GetClient(email=response[1], phone=response[3])
-    return get_client
+@router.get('/client_get/{client_token}', name='Получение данных клиента')
+async def get_client_email(client_token: str,
+                           session: Annotated[AsyncSession, Depends(get_async_session)]):
+    result = await get_client_service(client_token, session)
+    logging.info(f'Client data {result[1]} received')
+    return {"email": result[1],
+            "phone": result[3]}
 
 
 @router.post('/client_authentication/', name='Авторизация клиента')
-async def authentication(auth_data: AuthClient, session: AsyncSession = Depends(get_async_session)):
-    statement = select(client).where(client.c.email == auth_data.email)
+async def authentication(auth_data: AuthClient,
+                         session: Annotated[AsyncSession, Depends(get_async_session)]):
     try:
-        result = await session.execute(statement)
-        await session.commit()
-        response = result.first()
+        response = await client_auth_service(auth_data, session)
         if auth_data.password == response[2]:
-            return True
+            token = await create_session_service(auth_data.email,
+                                                 auth_data.password,
+                                                 auth_data.ip,
+                                                 session)
+            return {"enter": True,
+                    "token": token}
         else:
-            return False
+            return {"enter": False,
+                    "token": ""}
     except TypeError:
-        return False
+        return {"enter": False,
+                "token": ""}
 
 
-@router.put('/client_update/{client_email}', name='Обновление данных клиента')
-async def update_client(client_email: str, upd_client: UpdateClient,
-                        session: AsyncSession = Depends(get_async_session)):
-    statement = select(client).where(client.c.email == client_email)
-    result = await session.execute(statement)
-    await session.commit()
-    email = upd_client.email
-    response = result.first()
-    changed_data = []
-    if upd_client.email != "":
-        changed_data.append(upd_client.email)
-    else:
-        changed_data.append(response[1])
-    if upd_client.new_password != "":
-        changed_data.append(upd_client.new_password)
-    else:
-        changed_data.append(response[2])
-    if upd_client.phone != "":
-        changed_data.append(upd_client.phone)
-    else:
-        changed_data.append(response[3])
-    statement = select(client).where(client.c.email == email)
-    result = await session.execute(statement)
-    await session.commit()
-    email_exists_check = result.first()
-    if email_exists_check[1] == response[1]:
-        email_exists_check = None
-    if upd_client.old_password == response[2] and email_exists_check is None:
-        update_data = AddClient(email=changed_data[0], password=changed_data[1], phone=changed_data[2])
-        statement = update(client).where(client.c.email == client_email) \
-            .values(**update_data.model_dump())
-        await session.execute(statement)
-        await session.commit()
-        logging.info(f'Client data with id {client_email} updated')
-        return True
-    else:
-        return False
+@router.put('/client_update/{client_token}', name='Обновление данных клиента')
+async def update_client(client_token: str, upd_client: UpdateClient,
+                        session: Annotated[AsyncSession, Depends(get_async_session)]):
+    result = await update_client_service(client_token, upd_client, session)
+    logging.info(f'Client data with token {client_token} updated')
+    return result
 
 
-@router.delete('/client_delete/{client_id}', name='Удаление клиента')
-async def delete_client(client_id: int,
-                        session: AsyncSession = Depends(get_async_session)):
-    statement = delete(client).where(client.c.id == client_id)
-    await session.execute(statement)
-    await session.commit()
-    logging.info(f'Client with id {client_id} deleted')
+@router.delete('/client_delete/{client_token}', name='Удаление клиента')
+async def delete_client(client_token: str,
+                        session: Annotated[AsyncSession, Depends(get_async_session)]):
+    await client_delete_service(client_token, session)
+    logging.info(f'Client with token {client_token} deleted')
     return {'status': 'success'}

@@ -5,9 +5,11 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from src.dao.IdentificateDAO import metadata as identificate_metadata
-from src.dao.WorkerDAO import metadata as worker_metadata
+from src.dao.HumanDAO import metadata as human_metadata
 from src.dao.ClientDAO import metadata as client_metadata
-from src.dao.SubscribesDAO import metadata as subscribe_metadata
+from src.dao.SubscribeDAO import metadata as subscribe_metadata
+from src.dao.AuthorizationSessionDAO import metadata as token_metadata
+
 
 from alembic import context
 
@@ -33,7 +35,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = [client_metadata, subscribe_metadata, identificate_metadata, worker_metadata]
+target_metadata = [client_metadata, subscribe_metadata, identificate_metadata, human_metadata, token_metadata]
 
 
 # other values from the config, defined by the needs of env.py,

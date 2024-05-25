@@ -17,7 +17,7 @@ router = APIRouter(
 detect = FaceDetector()
 
 
-@router.post('/identification', name='Идентификация')
+@router.post('/identification/{client_token}', name='Идентификация')
 async def identify(client_token: str, file: Annotated[UploadFile, File()],
                    session: Annotated[AsyncSession, Depends(get_async_session)]):
     await identification_service(client_token, file, session)

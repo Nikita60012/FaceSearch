@@ -50,7 +50,7 @@ async def identification_service(client_token: str, file: Annotated[UploadFile, 
 
 async def get_identification_service(client_token: str, identification_id: int,
                                      session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     statement = select(human_identifications).where(human_identifications.c.id == identification_id
                                                     and human_identifications.c.id_client == client_id)
     result = await session.execute(statement)
@@ -68,7 +68,7 @@ async def get_identification_service(client_token: str, identification_id: int,
 
 async def identification_delete_service(client_token: str, identification_id: int,
                                         session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     statement = delete(human_identifications).where(human_identifications.c.id == identification_id and
                                                     human_identifications.c.id_client == client_id)
     await session.execute(statement)

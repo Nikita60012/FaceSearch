@@ -24,7 +24,7 @@ async def identify(client_token: str, file: Annotated[UploadFile, File()],
     return {"status": "success"}
 
 
-@router.get('/identification_get/{identification_id}', name='получение записи идентификации')
+@router.get('/identification_get/{client_token}/{identification_id}', name='получение записи идентификации')
 async def get_identification(client_token: str, identification_id: int,
                              session: Annotated[AsyncSession, Depends(get_async_session)]):
     result = await get_identification_service(client_token, identification_id, session)

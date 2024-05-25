@@ -54,7 +54,7 @@ async def human_get_service(client_token: str, human_id: int,
 
 async def people_get_service(client_token: str,
                              session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     statement = select(human.c["id", "fullname"]).where(human.c.id_client == client_id)
     result = await session.execute(statement)
     await session.commit()
@@ -71,7 +71,7 @@ async def update_human_service(client_token: str,
                                upd_worker: UpdateWorker,
                                file: Annotated[UploadFile, File],
                                session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     image = file.file.read()
     img = compress_image(image)
     photo = bytes_to_image(image)
@@ -85,7 +85,7 @@ async def update_human_service(client_token: str,
 
 async def delete_human_service(client_token: str, human_id: int,
                                session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     statement = delete(human).where(human.c.id_client == client_id and human.c.id == human_id)
     await session.execute(statement)
     await session.commit()
@@ -93,7 +93,7 @@ async def delete_human_service(client_token: str, human_id: int,
 
 async def get_human_photo(client_token: str, human_id: int,
                           session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     statement = select(human.c.photo).where(human.c.id_client == client_id and human.c.id == human_id)
     result = await session.execute(statement)
     await session.commit()

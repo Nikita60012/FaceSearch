@@ -11,6 +11,7 @@ from src.database.connection.database import get_async_session
 from src.dto.request.AddClientDTO import AddClient
 from src.dto.request.AuthClientDTO import AuthClient
 from src.dto.request.UpdateClientDTO import UpdateClient
+from src.dto.request.UpdateDataClientDTO import UpdateDataClient
 from src.service.token.TokenService import create_access_token
 
 
@@ -19,7 +20,7 @@ async def is_client_exist_service(email: str,
     statement = select(client).where(client.c.email == email)
     result = await session.execute(statement)
     await session.commit()
-    return result.first()[0]
+    return result.first()
 
 
 async def add_client_service(new_client: AddClient,
@@ -43,7 +44,7 @@ async def get_client_token2id_service(client_token: str,
     statement = select(authSessions.c["id_client", "actual"]).where(authSessions.c.token == client_token)
     result = await session.execute(statement)
     await session.commit()
-    response = result.first()[0]
+    response = result.first()
     if response[1]:
         return response[0]
     else:
@@ -52,8 +53,8 @@ async def get_client_token2id_service(client_token: str,
 
 async def get_client_service(client_token: str,
                              session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_email = get_client_token2id_service(client_token, session)
-    statement = select(client).where(client.c.email == client_email)
+    client_id = await get_client_token2id_service(client_token, session)
+    statement = select(client).where(client.c.id == client_id)
     result = await session.execute(statement)
     await session.commit()
     return result.first()
@@ -61,7 +62,7 @@ async def get_client_service(client_token: str,
 
 async def update_client_service(client_token: str, upd_client: UpdateClient,
                                 session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     statement = select(client).where(client.c.id == client_id)
     result = await session.execute(statement)
     await session.commit()
@@ -79,8 +80,8 @@ async def update_client_service(client_token: str, upd_client: UpdateClient,
         changed_data.append(upd_client.phone)
     else:
         changed_data.append(response[3])
-    if is_client_exist_service(upd_client.email, session) is None and upd_client.old_password == response[2]:
-        update_data = AddClient(email=changed_data[0], password=changed_data[1], phone=changed_data[2])
+    if await is_client_exist_service(upd_client.email, session) is None and upd_client.old_password == response[2]:
+        update_data = UpdateDataClient(email=changed_data[0], password=changed_data[1], phone=changed_data[2])
         statement = update(client).where(client.c.id == client_id) \
             .values(**update_data.model_dump())
         await session.execute(statement)
@@ -90,9 +91,17 @@ async def update_client_service(client_token: str, upd_client: UpdateClient,
         return False
 
 
+async def client_exit_service(client_token: str,
+                              session: Annotated[AsyncSession, Depends(get_async_session)]):
+    statement = update(authSessions).where(authSessions.c.token == client_token).\
+        values(out_date=datetime.datetime.today(), actual=False)
+    await session.execute(statement)
+    await session.commit()
+
+
 async def client_delete_service(client_token: str,
                                 session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     statement = delete(client).where(client.c.id == client_id)
     await session.execute(statement)
     await session.commit()

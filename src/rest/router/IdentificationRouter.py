@@ -5,9 +5,11 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connection.database import get_async_session
+from src.dto.response.GetIdentificationResultDTO import GetIdentificationResult
 from src.service.detector.DetectorService import FaceDetector
 from src.service.identification.IdentificationService import identification_service, get_identification_service, \
-    identification_delete_service
+    identification_delete_service, get_identification_known_person_photo_service, \
+    get_identification_unknown_person_photo_service
 
 router = APIRouter(
     prefix='/identification_people',
@@ -28,9 +30,21 @@ async def identify(client_token: str, file: Annotated[UploadFile, File()],
 async def get_identification(client_token: str, identification_id: int,
                              session: Annotated[AsyncSession, Depends(get_async_session)]):
     result = await get_identification_service(client_token, identification_id, session)
-    return {'name': result[2],
-            'date': result[3],
-            'conclusion': result[6]}
+    return GetIdentificationResult(human_id=result[1], conclusion=result[0])
+
+
+@router.get('/identification_get_known_person_photo/{client_token}/{identification_id}')
+async def get_identification_known_person_photo(client_token: str, identification_id: int,
+                                                session: Annotated[AsyncSession, Depends(get_async_session)]):
+    result = await get_identification_known_person_photo_service(client_token, identification_id, session)
+    return result
+
+
+@router.get('/identification_get_unknown_person_photo/{client_token}/{identification_id}')
+async def get_identification_unknown_person_photo(client_token: str, identification_id: int,
+                                                  session: Annotated[AsyncSession, Depends(get_async_session)]):
+    result = await get_identification_unknown_person_photo_service(client_token, identification_id, session)
+    return result
 
 
 @router.delete('/identification_delete/{identification_id}', name='удаление записи идентификации')

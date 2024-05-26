@@ -7,6 +7,8 @@ from typing_extensions import Annotated
 
 from src.dao.AuthorizationSessionDAO import authSessions
 from src.dao.ClientDAO import client
+from src.dao.HumanDAO import human
+from src.dao.SubscribeDAO import subscribe
 from src.database.connection.database import get_async_session
 from src.dto.request.AddClientDTO import AddClient
 from src.dto.request.AuthClientDTO import AuthClient
@@ -53,11 +55,25 @@ async def get_client_token2id_service(client_token: str,
 
 async def get_client_service(client_token: str,
                              session: Annotated[AsyncSession, Depends(get_async_session)]):
+
     client_id = await get_client_token2id_service(client_token, session)
-    statement = select(client).where(client.c.id == client_id)
+    statement = select(client.c['email', 'phone']).where(client.c.id == client_id)
     result = await session.execute(statement)
     await session.commit()
-    return result.first()
+    response = result.first()
+    data = [response[0], response[1]]
+    statement = select(subscribe.c['slots', 'end_date_of_subscribe']).where(subscribe.c.id_client == client_id)
+    result = await session.execute(statement)
+    await session.commit()
+    response = result.first()
+    days = response[1] - datetime.date.today()
+    data += [response[0], days.days]
+    statement = select(human.c.id).where(human.c.id_client == client_id)
+    result = await session.execute(statement)
+    await session.commit()
+    response = result.all()
+    data += [len(response)]
+    return data
 
 
 async def update_client_service(client_token: str, upd_client: UpdateClient,
@@ -80,7 +96,7 @@ async def update_client_service(client_token: str, upd_client: UpdateClient,
         changed_data.append(upd_client.phone)
     else:
         changed_data.append(response[3])
-    if await is_client_exist_service(upd_client.email, session) is None and upd_client.old_password == response[2]:
+    if (await is_client_exist_service(upd_client.email, session) is None) & (upd_client.old_password == response[2]):
         update_data = UpdateDataClient(email=changed_data[0], password=changed_data[1], phone=changed_data[2])
         statement = update(client).where(client.c.id == client_id) \
             .values(**update_data.model_dump())

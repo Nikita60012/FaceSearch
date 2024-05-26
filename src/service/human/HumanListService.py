@@ -4,7 +4,7 @@ from io import BytesIO
 import numpy as np
 from click import File
 from fastapi import UploadFile, Form, Depends
-from fastapi.openapi.models import Response
+from starlette.responses import Response
 from sqlalchemy import select, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing_extensions import Annotated
@@ -13,7 +13,7 @@ from src.database.connection.database import get_async_session
 from src.dto.request.AddHumanDTO import AddWorker
 from src.dto.request.UpdateHumanDTO import UpdateWorker
 from src.dto.response.GetHumanDTO import GetHuman
-from src.dto.response.getPeoplesDTO import GetPeoples
+from src.dto.response.GetPeoplesDTO import GetPeoples
 from src.service.Image.ImageService import compress_image, bytes_to_image, decompress_image
 from src.service.client.ClientService import get_client_token2id_service
 from src.service.detector.DetectorService import FaceDetector
@@ -26,8 +26,7 @@ async def human_add_service(client_token: str,
                             file: Annotated[UploadFile, File],
                             session: Annotated[AsyncSession, Depends(get_async_session)]):
     image = file.file.read()
-
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     img = compress_image(image)
     photo = bytes_to_image(image)
     result = detect.find_main_descriptor(photo)
@@ -39,9 +38,9 @@ async def human_add_service(client_token: str,
 
 async def human_get_service(client_token: str, human_id: int,
                             session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = get_client_token2id_service(client_token, session)
+    client_id = await get_client_token2id_service(client_token, session)
     statement = select(human.c["fullname", "birthdate", "phone", "photo"]).where(
-        human.c.id == human_id and human.c.id_client == client_id)
+        (human.c.id == human_id) & (human.c.id_client == client_id))
     result = await session.execute(statement)
     await session.commit()
     response = result.first()
@@ -77,7 +76,7 @@ async def update_human_service(client_token: str,
     photo = bytes_to_image(image)
     raw_descriptor = detect.find_main_descriptor(photo)
     descriptor = np.asarray(raw_descriptor)
-    statement = update(human).where(human.c.id_client == client_id and human.c.id == human_id) \
+    statement = update(human).where((human.c.id_client == client_id) & (human.c.id == human_id)) \
         .values(photo=img, descriptor=descriptor, **upd_worker.model_dump())
     await session.execute(statement)
     await session.commit()
@@ -86,7 +85,7 @@ async def update_human_service(client_token: str,
 async def delete_human_service(client_token: str, human_id: int,
                                session: Annotated[AsyncSession, Depends(get_async_session)]):
     client_id = await get_client_token2id_service(client_token, session)
-    statement = delete(human).where(human.c.id_client == client_id and human.c.id == human_id)
+    statement = delete(human).where((human.c.id_client == client_id) & (human.c.id == human_id))
     await session.execute(statement)
     await session.commit()
 
@@ -94,14 +93,15 @@ async def delete_human_service(client_token: str, human_id: int,
 async def get_human_photo(client_token: str, human_id: int,
                           session: Annotated[AsyncSession, Depends(get_async_session)]):
     client_id = await get_client_token2id_service(client_token, session)
-    statement = select(human.c.photo).where(human.c.id_client == client_id and human.c.id == human_id)
+    statement = select(human.c.photo).where((human.c.id_client == client_id) & (human.c.id == human_id))
     result = await session.execute(statement)
     await session.commit()
     response = result.first()
     decompress = decompress_image(response[0])
-    image = bytes_to_image(decompress)
-    buf = BytesIO()
-    image.save(buf, format='JPEG', quality=100)
-    buf.seek(0)  # important here!
+    # image = bytes_to_image(decompress)
+    # buf = BytesIO()
+    # image.save(buf, format='JPEG', quality=100)
+    # buf.seek(0)  # important here!
+    # image.show()
     response = Response(content=decompress, media_type="image/jpeg")
     return response

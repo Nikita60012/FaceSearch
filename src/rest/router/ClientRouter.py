@@ -36,8 +36,11 @@ async def get_client_email(client_token: str,
                            session: Annotated[AsyncSession, Depends(get_async_session)]):
     result = await get_client_service(client_token, session)
     logging.info(f'Client data {result[1]} received')
-    return {"email": result[1],
-            "phone": result[3]}
+    return {"email": result[0],
+            "phone": result[1],
+            "slots": result[2],
+            "days": result[3],
+            "slots_occupied": result[4]}
 
 
 @router.post('/client_authentication/', name='Авторизация клиента')

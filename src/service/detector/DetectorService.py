@@ -78,8 +78,7 @@ class FaceDetector:
         elif min_dist <= 0.6 and len(descriptors) > 1:
             logging.info(f'Полученное лицо совпадает с лицом на фото записи с индексом '
                          f'{descriptors[min_index][0]}')
-            result = f'Полученное лицо совпадает с лицом на фото записи с индексом ' \
-                     f'{descriptors[min_index][0]}'
+            result = f'Полученное лицо совпадает с лицом на фото записи '
             unknown = False
         elif min_dist > 0.6 and len(descriptors) > 1:
             logging.info('Это незнакомый человек')

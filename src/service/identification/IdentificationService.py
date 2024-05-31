@@ -35,7 +35,7 @@ async def identification_service(client_token: str, file: Annotated[UploadFile, 
                                                          date=datetime.datetime.today(),
                                                          known_person_photo=known_person[result[1]][2],
                                                          person_to_detect=unknown_person_photo,
-                                                         conclusion=result[0])
+                                                         conclusion=(result[0][:-1] + known_person[result[1][1]]))
         logging.info(f'Human {known_person[result[1]][1]} identificated')
     else:
         statement = insert(human_identifications).values(id_client=client_id,

@@ -22,8 +22,11 @@ detect = FaceDetector()
 @router.post('/identification/{client_token}', name='Идентификация')
 async def identify(client_token: str, file: Annotated[UploadFile, File()],
                    session: Annotated[AsyncSession, Depends(get_async_session)]):
-    await identification_service(client_token, file, session)
-    return {"status": "success"}
+    try:
+        await identification_service(client_token, file, session)
+        return True
+    except Exception:
+        return File()
 
 
 @router.get('/identification_get/{client_token}/{identification_id}', name='получение записи идентификации')

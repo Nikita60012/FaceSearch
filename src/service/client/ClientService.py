@@ -14,6 +14,7 @@ from src.dto.request.AddClientDTO import AddClient
 from src.dto.request.AuthClientDTO import AuthClient
 from src.dto.request.UpdateClientDTO import UpdateClient
 from src.dto.request.UpdateDataClientDTO import UpdateDataClient
+from src.dto.response.CheckSubscribeDTO import CheckSubscribe
 from src.service.token.TokenService import create_access_token
 
 
@@ -66,8 +67,11 @@ async def get_client_service(client_token: str,
     result = await session.execute(statement)
     await session.commit()
     response = result.first()
-    days = response[1] - datetime.date.today()
-    data += [response[0], days.days]
+    try:
+        days = response[1] - datetime.date.today()
+        data += [response[0], days.days]
+    except TypeError:
+        data += [0, 0]
     statement = select(human.c.id).where(human.c.id_client == client_id)
     result = await session.execute(statement)
     await session.commit()
@@ -115,9 +119,8 @@ async def client_exit_service(client_token: str,
     await session.commit()
 
 
-async def client_delete_service(client_token: str,
+async def client_delete_service(client_id: int,
                                 session: Annotated[AsyncSession, Depends(get_async_session)]):
-    client_id = await get_client_token2id_service(client_token, session)
     statement = delete(client).where(client.c.id == client_id)
     await session.execute(statement)
     await session.commit()
@@ -145,3 +148,25 @@ async def create_session_service(client_email: str, password: str, ip: str,
     await session.execute(statement)
     await session.commit()
     return token
+
+
+async def client_check_subscribe_service(client_token: str,
+                                session: Annotated[AsyncSession, Depends(get_async_session)]):
+    client_id = await get_client_token2id_service(client_token, session)
+    statement = select(subscribe.c['slots', 'end_date_of_subscribe']).where(subscribe.c.id_client == client_id)
+    result = await session.execute(statement)
+    await session.commit()
+    response = result.first()
+    date = response[1]
+    slots = response[0]
+    data = CheckSubscribe()
+    statement = select(human.c.id).where(human.c.id_client == client_id)
+    result = await session.execute(statement)
+    await session.commit()
+    response = result.all()
+    slots_occupied = len(response)
+    if datetime.date.today() <= date:
+        data.date_status = True
+        if slots_occupied < slots:
+            data.slots_status = True
+    return data

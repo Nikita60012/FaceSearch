@@ -8,9 +8,11 @@ from src.database.connection.database import get_async_session
 from src.dto.request.AddClientDTO import AddClient
 from src.dto.request.AuthClientDTO import AuthClient
 from src.dto.request.UpdateClientDTO import UpdateClient
+from src.dto.response.GetClientDTO import GetClient
 from src.dto.response.GetTokenClientDTO import GetTokenClientDTO
 from src.service.client.ClientService import create_session_service, is_client_exist_service, add_client_service, \
-    client_auth_service, update_client_service, client_delete_service, get_client_service, client_exit_service
+    client_auth_service, update_client_service, client_delete_service, get_client_service, client_exit_service, \
+    client_check_subscribe_service
 
 router = APIRouter(
     prefix='/client',
@@ -36,11 +38,12 @@ async def get_client_email(client_token: str,
                            session: Annotated[AsyncSession, Depends(get_async_session)]):
     result = await get_client_service(client_token, session)
     logging.info(f'Client data {result[1]} received')
-    return {"email": result[0],
-            "phone": result[1],
-            "slots": result[2],
-            "days": result[3],
-            "slots_occupied": result[4]}
+    return GetClient(
+        email=result[0],
+        phone=result[1],
+        slots=result[2],
+        days=result[3],
+        slots_occupied=result[4])
 
 
 @router.post('/client_authentication/', name='Авторизация клиента')
@@ -76,12 +79,18 @@ async def exit_client(client_token: str,
     return {'status': 'success'}
 
 
-@router.delete('/client_delete/{client_token}', name='Удаление клиента')
-async def delete_client(client_token: str,
+@router.delete('/client_delete/{client_id}', name='Удаление клиента')
+async def delete_client(client_id: int,
                         session: Annotated[AsyncSession, Depends(get_async_session)]):
-    await client_delete_service(client_token, session)
-    logging.info(f'Client with token {client_token} deleted')
+    await client_delete_service(client_id, session)
+    logging.info(f'Client with token {client_id} deleted')
     return {'status': 'success'}
 
 
+@router.get('/client_check_subscribe/{client_token}', name='Проверка подписки клиента')
+async def check_client_subscribe(client_token: str,
+                                 session: Annotated[AsyncSession, Depends(get_async_session)]):
+    status = await client_check_subscribe_service(client_token, session)
+    logging.info(f'Client subscribe with token {client_token} checked')
+    return status
 

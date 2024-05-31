@@ -1,3 +1,5 @@
+import base64
+import datetime
 import logging
 from io import BytesIO
 
@@ -10,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing_extensions import Annotated
 from src.dao.HumanDAO import human
 from src.database.connection.database import get_async_session
-from src.dto.request.AddHumanDTO import AddWorker
+from src.dto.request.AddHumanDTO import HumanAdd
 from src.dto.request.UpdateHumanDTO import UpdateWorker
 from src.dto.response.GetHumanDTO import GetHuman
 from src.dto.response.GetPeoplesDTO import GetPeoples
@@ -22,18 +24,23 @@ detect = FaceDetector()
 
 
 async def human_add_service(client_token: str,
-                            new_worker: Annotated[AddWorker, Form()],
-                            file: Annotated[UploadFile, File],
+                            new_worker: Annotated[HumanAdd, Form()],
                             session: Annotated[AsyncSession, Depends(get_async_session)]):
-    image = file.file.read()
+    image = base64.b64decode(new_worker.photo)
     client_id = await get_client_token2id_service(client_token, session)
     img = compress_image(image)
     photo = bytes_to_image(image)
-    result = detect.find_main_descriptor(photo)
-    descriptor = np.asarray(result)
-    statement = insert(human).values(id_client=client_id, photo=img, descriptor=descriptor, **new_worker.model_dump())
-    await session.execute(statement)
-    await session.commit()
+    try:
+        result = detect.find_main_descriptor(photo)
+        descriptor = np.asarray(result)
+        birthdate = datetime.datetime.strptime(new_worker.birthdate, "%d%m%Y").date()
+        statement = insert(human).values(id_client=client_id, photo=img, descriptor=descriptor, birthdate=birthdate, **new_worker.model_dump())
+        await session.execute(statement)
+        await session.commit()
+        return True
+    except TypeError:
+        logging.error('Wrong photo')
+        return False
 
 
 async def human_get_service(client_token: str, human_id: int,
@@ -68,18 +75,21 @@ async def people_get_service(client_token: str,
 async def update_human_service(client_token: str,
                                human_id: int,
                                upd_worker: UpdateWorker,
-                               file: Annotated[UploadFile, File],
                                session: Annotated[AsyncSession, Depends(get_async_session)]):
     client_id = await get_client_token2id_service(client_token, session)
-    image = file.file.read()
+    image = base64.b64decode(upd_worker.photo)
     img = compress_image(image)
     photo = bytes_to_image(image)
-    raw_descriptor = detect.find_main_descriptor(photo)
-    descriptor = np.asarray(raw_descriptor)
-    statement = update(human).where((human.c.id_client == client_id) & (human.c.id == human_id)) \
-        .values(photo=img, descriptor=descriptor, **upd_worker.model_dump())
-    await session.execute(statement)
-    await session.commit()
+    try:
+        raw_descriptor = detect.find_main_descriptor(photo)
+        descriptor = np.asarray(raw_descriptor)
+        statement = update(human).where((human.c.id_client == client_id) & (human.c.id == human_id)) \
+            .values(photo=img, descriptor=descriptor, **upd_worker.model_dump())
+        await session.execute(statement)
+        await session.commit()
+        return True
+    except TypeError:
+        return False
 
 
 async def delete_human_service(client_token: str, human_id: int,
@@ -90,8 +100,8 @@ async def delete_human_service(client_token: str, human_id: int,
     await session.commit()
 
 
-async def get_human_photo(client_token: str, human_id: int,
-                          session: Annotated[AsyncSession, Depends(get_async_session)]):
+async def get_human_photo_service(client_token: str, human_id: int,
+                                  session: Annotated[AsyncSession, Depends(get_async_session)]):
     client_id = await get_client_token2id_service(client_token, session)
     statement = select(human.c.photo).where((human.c.id_client == client_id) & (human.c.id == human_id))
     result = await session.execute(statement)

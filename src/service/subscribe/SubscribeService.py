@@ -16,14 +16,30 @@ async def buy_subscribe_service(client_token: str,
                                 buy_subscribe: BuySubscribe,
                                 session: Annotated[AsyncSession, Depends(get_async_session)]):
     client_id = await get_client_token2id_service(client_token, session)
-    end_date_of_subscribe = date.today() + timedelta(days=buy_subscribe.days)
-    statement = insert(subscribe).values(id_client=client_id,
-                                         end_date_of_subscribe=end_date_of_subscribe,
-                                         slots=buy_subscribe.slots,
-                                         last_authorization=buy_subscribe.last_authorization)
-    await session.execute(statement)
+    statement = select(subscribe).where(subscribe.c.id_client == client_id)
+    result = await session.execute(statement)
     await session.commit()
-
+    response = result.first()
+    if response is None:
+        end_date_of_subscribe = date.today() + timedelta(days=buy_subscribe.days)
+        statement = insert(subscribe).values(id_client=client_id,
+                                             end_date_of_subscribe=end_date_of_subscribe,
+                                             slots=buy_subscribe.slots,
+                                             last_authorization=buy_subscribe.last_authorization)
+        print(statement)
+        await session.execute(statement)
+        await session.commit()
+    else:
+        end_date_of_subscribe = response[1] + timedelta(days=buy_subscribe.days)
+        slots = response[2] + buy_subscribe.slots
+        statement = update(subscribe) \
+            .values(id_client=client_id,
+                    end_date_of_subscribe=end_date_of_subscribe,
+                    slots=slots,
+                    last_authorization=buy_subscribe.last_authorization) \
+            .where(subscribe.c.id_client == client_id)
+        await session.execute(statement)
+        await session.commit()
 
 async def get_subscribe_service(client_token: str,
                                 session: Annotated[AsyncSession, Depends(get_async_session)]):

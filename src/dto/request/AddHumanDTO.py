@@ -1,15 +1,8 @@
-import json
-from datetime import date
-
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 
 
-class AddWorker(BaseModel):
+class HumanAdd(BaseModel):
     fullname: str = 'name'
-    birthdate: date = '2000-01-01'
+    birthdate: str = '2000-01-01'
     phone: str = 'phone'
-
-    @model_validator(mode="before")
-    @classmethod
-    def to_py_dict(cls, data):
-        return json.loads(data)
+    photo: str

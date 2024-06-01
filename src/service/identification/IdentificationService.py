@@ -1,10 +1,11 @@
+import base64
 import datetime
 import logging
 
-from fastapi import UploadFile, File, Depends
-from starlette.responses import Response
+from fastapi import Depends
 from sqlalchemy import select, insert, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import Response
 from typing_extensions import Annotated
 
 from src.dao.HumanDAO import human
@@ -17,18 +18,18 @@ from src.service.detector.DetectorService import FaceDetector
 detect = FaceDetector()
 
 
-async def identification_service(client_token: str, file: Annotated[UploadFile, File()],
+async def identification_service(client_token: str, image: str,
                                  session: Annotated[AsyncSession, Depends(get_async_session)]):
     client_id = await get_client_token2id_service(client_token, session)
-    byte_image = file.file.read()
-    person_image = bytes_to_image(byte_image)
+    photo = base64.b64decode(image)
+    person_image = bytes_to_image(photo)
     person_descriptor = detect.find_main_descriptor(person_image)
     statement = select(human.c.id, human.c.fullname, human.c.photo, human.c.descriptor)
     descriptor = await session.execute(statement)
     await session.commit()
     known_person = descriptor.fetchall()
     result = detect.comparison(known_person, person_descriptor)
-    unknown_person_photo = compress_image(byte_image)
+    unknown_person_photo = compress_image(photo)
     if not result[2]:
         statement = insert(human_identifications).values(id_client=client_id,
                                                          name=known_person[result[1]][1],
@@ -105,3 +106,17 @@ async def get_identification_unknown_person_photo_service(client_token: str, ide
     photo = decompress_image(result.first()[0])
     response = Response(content=photo, media_type="image/jpeg")
     return response
+
+
+async def identification_check_people_availability_service(client_token: str,
+                                                           session: Annotated[
+                                                               AsyncSession, Depends(get_async_session)]):
+    client_id = await get_client_token2id_service(client_token, session)
+    statement = select(human).where(human.c.id_client==client_id)
+    result = await session.execute(statement)
+    await session.commit()
+    response = result.all()
+    if len(response) > 0:
+        return True
+    else:
+        return False

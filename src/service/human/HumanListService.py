@@ -24,7 +24,7 @@ detect = FaceDetector()
 
 
 async def human_add_service(client_token: str,
-                            new_worker: Annotated[HumanAdd, Form()],
+                            new_worker: HumanAdd,
                             session: Annotated[AsyncSession, Depends(get_async_session)]):
     image = base64.b64decode(new_worker.photo)
     client_id = await get_client_token2id_service(client_token, session)
@@ -34,7 +34,8 @@ async def human_add_service(client_token: str,
         result = detect.find_main_descriptor(photo)
         descriptor = np.asarray(result)
         birthdate = datetime.datetime.strptime(new_worker.birthdate, "%d%m%Y").date()
-        statement = insert(human).values(id_client=client_id, photo=img, descriptor=descriptor, birthdate=birthdate, **new_worker.model_dump())
+        statement = insert(human).values(id_client=client_id, photo=img, descriptor=descriptor, birthdate=birthdate,
+                                         phone=new_worker.phone, fullname=new_worker.fullname)
         await session.execute(statement)
         await session.commit()
         return True

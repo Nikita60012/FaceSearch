@@ -30,24 +30,39 @@ async def identification_service(client_token: str, image: str,
     known_person = descriptor.fetchall()
     result = detect.comparison(known_person, person_descriptor)
     unknown_person_photo = compress_image(photo)
+    date = datetime.datetime.today()
     if not result[2]:
         statement = insert(human_identifications).values(id_client=client_id,
                                                          name=known_person[result[1]][1],
-                                                         date=datetime.datetime.today(),
+                                                         date=date,
                                                          known_person_photo=known_person[result[1]][2],
                                                          person_to_detect=unknown_person_photo,
-                                                         conclusion=(result[0][:-1] + known_person[result[1][1]]))
+                                                         conclusion=(result[0][:-1] + known_person[result[1]][1]))
         logging.info(f'Human {known_person[result[1]][1]} identificated')
+        statement2 = select(human_identifications.c.id) \
+            .where((human_identifications.c.id_client == client_id))\
+            .where(human_identifications.c.name == known_person[result[1]][1])\
+            .where(human_identifications.c.date == date) \
+            .where(human_identifications.c.conclusion == (result[0][:-1] + known_person[result[1]][1]))
     else:
         statement = insert(human_identifications).values(id_client=client_id,
-                                                         name='Uknown',
-                                                         date=datetime.datetime.today(),
-                                                         known_person_photo=None,
+                                                         name=known_person[result[1]][1],
+                                                         date=date,
+                                                         known_person_photo=known_person[result[1]][2],
                                                          person_to_detect=unknown_person_photo,
-                                                         conclusion=result[0])
+                                                         conclusion=(result[0] + known_person[result[1]][1]))
         logging.info(f'Person not identificated')
+        statement2 = select(human_identifications.c.id) \
+            .where(human_identifications.c.id_client == client_id)\
+            .where(human_identifications.c.name == known_person[result[1]][1])\
+            .where(human_identifications.c.date == date)\
+            .where(human_identifications.c.conclusion == (result[0] + known_person[result[1]][1]))
     await session.execute(statement)
     await session.commit()
+    result = await session.execute(statement2)
+    await session.commit()
+    identification_id = result.first()
+    return identification_id[0]
 
 
 async def get_identification_service(client_token: str, identification_id: int,
@@ -60,8 +75,7 @@ async def get_identification_service(client_token: str, identification_id: int,
     await session.commit()
     response = result.first()
     data = [response[1]]
-    statement = select(human.c.id).where(human.c.fullname == response[0])
-    print(statement)
+    statement = select(human.c.id).where(human.c.fullname == response[0]).where(human.c.id_client == client_id)
     result = await session.execute(statement)
     await session.commit()
     data.append(result.first()[0])
@@ -112,7 +126,7 @@ async def identification_check_people_availability_service(client_token: str,
                                                            session: Annotated[
                                                                AsyncSession, Depends(get_async_session)]):
     client_id = await get_client_token2id_service(client_token, session)
-    statement = select(human).where(human.c.id_client==client_id)
+    statement = select(human).where(human.c.id_client == client_id)
     result = await session.execute(statement)
     await session.commit()
     response = result.all()

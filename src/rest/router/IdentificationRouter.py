@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connection.database import get_async_session
 from src.dto.request.IdentificationDTO import Identification
+from src.dto.response.GetIdentificationDTO import GetIdentification
 from src.dto.response.GetIdentificationResultDTO import GetIdentificationResult
 from src.service.detector.DetectorService import FaceDetector
 from src.service.identification.IdentificationService import identification_service, get_identification_service, \
@@ -24,10 +25,12 @@ detect = FaceDetector()
 async def identify(client_token: str, photo: Identification,
                    session: Annotated[AsyncSession, Depends(get_async_session)]):
     try:
-        await identification_service(client_token, photo.photo, session)
-        return True
-    except Exception:
-        return False
+        identification_id = await identification_service(client_token, photo.photo, session)
+        get_identification_id = GetIdentification(success=True, identification_id=identification_id)
+        return get_identification_id
+    except TypeError:
+        get_identification_id = GetIdentification()
+        return get_identification_id
 
 
 @router.get('/identification_get/{client_token}/{identification_id}', name='получение записи идентификации')

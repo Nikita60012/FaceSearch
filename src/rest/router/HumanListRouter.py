@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connection.database import get_async_session
 from src.dto.request.AddHumanDTO import HumanAdd
-from src.dto.request.UpdateHumanDTO import UpdateWorker
+from src.dto.request.UpdateHumanDTO import UpdateHuman
 from src.service.detector.DetectorService import FaceDetector
 from src.service.human.HumanListService import human_add_service, human_get_service, people_get_service, \
     update_human_service, delete_human_service, get_human_photo_service
@@ -53,7 +53,7 @@ async def get_people(client_token: str,
 @router.put('/human_update/{client_token}/{human_id}', name='Обновление данных человека')
 async def update_human(client_token: str,
                        human_id: int,
-                       upd_worker: UpdateWorker,
+                       upd_worker: UpdateHuman,
                        session: Annotated[AsyncSession, Depends(get_async_session)]):
     response = await update_human_service(client_token, human_id, upd_worker, session)
     logging.info(f'Human with id {human_id} data updated')

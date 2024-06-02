@@ -157,8 +157,14 @@ async def client_check_subscribe_service(client_token: str,
     result = await session.execute(statement)
     await session.commit()
     response = result.first()
-    date = response[1]
-    slots = response[0]
+    try:
+        date = response[1]
+    except TypeError:
+        date = datetime.date.min
+    try:
+        slots = response[0]
+    except TypeError:
+        slots = 0
     data = CheckSubscribe()
     statement = select(human.c.id).where(human.c.id_client == client_id)
     result = await session.execute(statement)

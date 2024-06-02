@@ -82,7 +82,7 @@ class FaceDetector:
             unknown = False
         elif min_dist > 0.6 and len(descriptors) > 1:
             logging.info('Это незнакомый человек')
-            result = 'Это незнакомый человек'
+            result = 'Этот человек похож на '
         logging.info(f'min_dist: {len(descriptors)}')
         logging.info('Эвклидово расстояние между дескрипторами: ' + str(min_dist) + '\n')
         return result, min_index, unknown
